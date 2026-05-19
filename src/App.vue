@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useLocalStorageValue } from './composables/useLocalStorageValue';
 
 const random = () => Math.floor(Math.random() * 100);
-
-const randomValue = ref(random());
+const { value: randomValue } = useLocalStorageValue('my-value', random(), {syncTabs: true})
 </script>
 
 <template>
