@@ -18,7 +18,9 @@ export function useLocalStorageValue<ValueType>(
 ): { value: Ref<ValueType> } {
   const value = shallowRef<ValueType>(toValue(initialValue)); // the object will be held in LS, so there is no need to deeply unpack it with ref
 
+  // for SSR scenario
   onBeforeMount(() => {
+    // reactive change of value
     watchEffect(() => {
       const hasValue = window.localStorage.getItem(toValue(key)) !== null;
 
