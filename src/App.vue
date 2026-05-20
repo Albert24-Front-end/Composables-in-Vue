@@ -3,10 +3,9 @@ import { ref } from "vue";
 import { useLocalStorageValue } from "./composables/useLocalStorageValue";
 
 const storageKey = ref("my-value");
+const synchTabs = ref({check: false});
 const random = () => Math.floor(Math.random() * 100);
-const { value: randomValue } = useLocalStorageValue(storageKey, random(), {
-  syncTabs: true,
-});
+const { value: randomValue } = useLocalStorageValue(storageKey, random(), synchTabs);
 </script>
 
 <template>
@@ -14,6 +13,7 @@ const { value: randomValue } = useLocalStorageValue(storageKey, random(), {
     <h1>Random value persistence</h1>
     <h2>Value: {{ randomValue }}</h2>
     <p class="field">Key: <input type="text" v-model="storageKey" /></p>
+    <p>Synchronize tabs: <input type="checkbox" v-model="synchTabs.check"></p>
     <button @click="randomValue = random()">Generate!</button>
   </div>
 </template>

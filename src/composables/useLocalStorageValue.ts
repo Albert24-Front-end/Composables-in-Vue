@@ -5,24 +5,19 @@ import {
   type MaybeRefOrGetter,
   watchEffect,
   onBeforeMount,
-  onUnmounted,
 } from "vue";
 
 type UseLocalStorageValueOptions = {
-  syncTabs?: boolean;
+  check?: boolean;
 };
 
 export function useLocalStorageValue<ValueType>(
   key: MaybeRefOrGetter<string>,
   initialValue: MaybeRefOrGetter<ValueType>,
-  options: UseLocalStorageValueOptions = { syncTabs: false },
+  options: MaybeRefOrGetter<UseLocalStorageValueOptions>,
 ): { value: Ref<ValueType> } {
-  // const startValue: ValueType =
-  //   (JSON.parse(
-  //     window.localStorage.getItem(toValue(key)) ?? "null",
-  //   ) as ValueType) ?? toValue(initialValue);
-  const abortController = new AbortController(); // creating abort controller of signals which were passed to event listeners
   const value = shallowRef<ValueType>(toValue(initialValue)); // the object will be held in LS, so there is no need to deeply unpack it with ref
+
   onBeforeMount(() => {
     watchEffect(() => {
       const hasValue = window.localStorage.getItem(toValue(key)) !== null;
@@ -40,27 +35,23 @@ export function useLocalStorageValue<ValueType>(
       window.localStorage.setItem(toValue(key), serializedValue);
     });
 
-    // watch(
-    //   value,
-    //   (newValue) => {
-    //     const serializedValue = JSON.stringify(newValue);
-    //     window.localStorage.setItem(toValue(key), serializedValue);
-    //   },
-    //   { immediate: true },
-    // );
-
     // enabling state synchronisation between several tabs of the same app
-    if (options.syncTabs) {
-      window.addEventListener("storage", (event) => {
-        if (event.key === toValue(key)) {
-          value.value = JSON.parse(event.newValue ?? "null") as ValueType;
-        }
-      }, {signal: abortController.signal});
-    }
-
-    onUnmounted(() => {
-      abortController.abort();
-    })
+    watchEffect((onCleanup) => {
+      const opts = toValue(options);
+      // console.log("watchEffect ran, check =", opts.check);
+      if (opts.check) {
+        const handler = (event: StorageEvent) => {
+          // console.log("storage event fired:", event.key, event.newValue);
+          if (event.key === toValue(key)) {
+            value.value = JSON.parse(event.newValue ?? "null") as ValueType;
+          }
+        };
+        window.addEventListener("storage", handler);
+        onCleanup(() => {
+          window.removeEventListener("storage", handler);
+        });
+      }
+    });
   });
 
   return { value };
